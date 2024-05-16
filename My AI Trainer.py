@@ -4,7 +4,11 @@ import time
 import mediapipe as mp
 import os
 import numpy as np
-path=r"C:\Users\jorge.lopezg\Documents\JorgeP\IA\AI-Personal-Trainer\NewImages"
+import os 
+
+
+dir_img="NewImages"
+path = os.path.join(os.getcwd(),dir_img)
 Images=os.listdir(path)
 print(Images)
 List=[]
@@ -26,7 +30,6 @@ while True:
     img=cv2.resize(img,(1500,800))
     img2 = detector.findPose(img2,draw=False)
     lmList = detector.getPosition(img2,draw=False)
-    print(lmList)
     st = ""
     if lmList:
         angle = detector.findAngle(img2, 11, 13, 15,draw=False)

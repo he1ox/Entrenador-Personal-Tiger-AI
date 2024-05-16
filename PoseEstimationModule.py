@@ -75,7 +75,7 @@ def main():
         img=cv2.resize(img,(900,600))
         detector.findPose(img)
         lmList=detector.getPosition(img)
-        print(lmList)
+        
         cTime = time.time()
         fps = 1 / (cTime - pTime)
         pTime = cTime
