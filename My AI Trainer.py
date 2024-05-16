@@ -4,32 +4,46 @@ import time
 import mediapipe as mp
 import os
 import numpy as np
-path=r"C:\Users\jorge.lopezg\Documents\JorgeP\IA\AI-Personal-Trainer\NewImages"
-Images=os.listdir(path)
+import pyttsx3
+import threading
+
+# Configuración del sintetizador de voz
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)  # Velocidad de la voz
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+path = r"C:\Users\50230\OneDrive\Desktop\UMG\Noveno Semestre\IA\Proyecto\Entrenador-Personal-Tiger-AI\NewImages"
+Images = os.listdir(path)
 print(Images)
-List=[]
+List = []
 for i in Images:
-    im=cv2.imread(path+'/'+i)
+    im = cv2.imread(path + '/' + i)
     List.append(im)
-cap=cv2.VideoCapture(0)
-bg_img=List[0]
-detector=pem.poseDetector()
-jump_cnt,pushups_cnt,twister_cnt,jj_cnt,sq_cnt,dumb_cnt=0,0,0,0,0,0
-delay_counter=0
-delay_counter_2=0
-bar,per=700,0
+
+cap = cv2.VideoCapture(0)
+bg_img = List[0]
+detector = pem.poseDetector()
+jump_cnt, pushups_cnt, twister_cnt, jj_cnt, sq_cnt, dumb_cnt = 0, 0, 0, 0, 0, 0
+delay_counter = 0
+delay_counter_2 = 0
+bar, per = 700, 0
+break_time = time.time()  # Tiempo actual
+
 while True:
-    success,img=cap.read()
-    img2=img.copy()
-    img2=cv2.resize(img,(1000,700))
-    img2=cv2.flip(img2,1)
-    img=cv2.resize(img,(1500,800))
-    img2 = detector.findPose(img2,draw=False)
-    lmList = detector.getPosition(img2,draw=False)
+    success, img = cap.read()
+    img2 = img.copy()
+    img2 = cv2.resize(img, (1000, 700))
+    img2 = cv2.flip(img2, 1)
+    img = cv2.resize(img, (1500, 800))
+    img2 = detector.findPose(img2, draw=False)
+    lmList = detector.getPosition(img2, draw=False)
     print(lmList)
     st = ""
     if lmList:
-        angle = detector.findAngle(img2, 11, 13, 15,draw=False)
+        angle = detector.findAngle(img2, 11, 13, 15, draw=False)
         left_hand, right_hand = lmList[18][1:], lmList[17][1:]
         left_leg, right_leg = lmList[28][1:], lmList[27][1:]
         left_hip, right_hip = lmList[24][1:], lmList[23][1:]
@@ -41,58 +55,84 @@ while True:
         cross_dist2, _, _ = detector.findDistance(right_hand, right_leg)
         hand_dist, _, _ = detector.findDistance(left_hand, right_hand)
         eye = lmList[1][1:]
+
         if delay_counter == 0:
             if eye[1] < 70:
-                bg_img=List[2]
+                bg_img = List[2]
                 per = 100
                 bar = 200
                 jump_cnt += 1
+                if jump_cnt % 10 == 0:
+                    threading.Thread(target=speak, args=(f"Has completado {jump_cnt} saltos Tomaremos un descanso de 1 minuto y 30 segundos",)).start()
+                    
+                    time.sleep(30)  # Tiempo de descanso
+                    jump_cnt = 0  # Reinicia el contador de saltos
             elif left_hand[0] > right_hip[0] and left_hand[1] < right_hip[1]:
-                dist=left_hand[1] < right_hip[1]
+                dist = left_hand[1] < right_hip[1]
                 per = 100
                 bar = 200
                 twister_cnt += 1
                 bg_img = List[4]
+                if twister_cnt % 10 == 0:
+                    threading.Thread(target=speak, args=(f"Has completado {twister_cnt} twisters Tomaremos un descanso de 1 minuto y 30 segundos",)).start()
+                    
+                    time.sleep(30)  # Tiempo de descanso
             elif left_hand[0] < 300 and right_hand[0] > 650:
                 per = 100
                 bar = 200
                 jj_cnt += 1
                 bg_img = List[3]
+                if jj_cnt % 10 == 0:
+                    threading.Thread(target=speak, args=(f"Has completado {jj_cnt} jumping jacks Tomaremos un descanso de 1 minuto y 30 segundos",)).start()
+                    time.sleep(15)  # Tiempo de descanso
+
         if delay_counter_2 == 0:
             per = np.interp(angle, (240, 320), (0, 100))
             bar = np.interp(angle, (240, 320), (700, 200))
             if eye[1] > 400:
                 per = np.interp(angle, (200, 250), (0, 100))
                 bar = np.interp(angle, (200, 250), (700, 200))
-                if angle > 250:
-                    pushups_cnt += 1
-                    bg_img = List[5]
+            if angle > 250:
+                pushups_cnt += 1
+                bg_img = List[5]
+                if pushups_cnt % 10 == 0:
+                    threading.Thread(target=speak, args=(f"Has completado {pushups_cnt} flexiones Tomaremos un descanso de 1 minuto y 30 segundos",)).start()
+                    time.sleep(30)  # Tiempo de descanso
             elif eye[1] < 400 and abs(left_hip[1] - left_leg_knee[1]) <= 60:
-                dist=-abs(left_hip[1] - left_leg_knee[1])
+                dist = -abs(left_hip[1] - left_leg_knee[1])
                 per = np.interp(dist, (-100, -60), (0, 100))
                 bar = np.interp(dist, (-100, -60), (700, 200))
                 sq_cnt += 1
                 bg_img = List[6]
+                if sq_cnt % 10 == 0:
+                    threading.Thread(target=speak, args=(f"Has completado {sq_cnt} sentadillas Tomaremos un descanso de 1 minuto y 30 segundos",)).start()
+                    time.sleep(30)  # Tiempo de descanso
             elif angle >= 320:
                 dumb_cnt += 1
                 bg_img = List[1]
-    delay_counter += 1
-    delay_counter_2 += 1
-    if delay_counter == 9:
-        delay_counter = 0
-    if delay_counter_2 == 15:
-        delay_counter_2 = 0
-    bg_img = cv2.resize(bg_img,(1500, 800))
-    img[:800,:1500]=bg_img
+                if dumb_cnt % 10 == 0:
+                    threading.Thread(target=speak, args=(f"Has completado {dumb_cnt} levantamientos Tomaremos un descanso de 1 minuto y 30 segundos",)).start()
+                    time.sleep(30)  # Tiempo de descanso
+
+        delay_counter += 1
+        delay_counter_2 += 1
+        if delay_counter == 9:
+            delay_counter = 0
+        if delay_counter_2 == 15:
+            delay_counter_2 = 0
+
+    bg_img = cv2.resize(bg_img, (1500, 800))
+    img[:800, :1500] = bg_img
     img[100:800, 250:1250] = img2
     cv2.rectangle(img, (1100, 200), (1200, 700), (0, 255, 0), 4)
     cv2.rectangle(img, (1100, int(bar)), (1200, 700), (0, 255, 255), cv2.FILLED)
-    cv2.putText(img,str(int(per))+"%",(1100,170),cv2.FONT_HERSHEY_PLAIN,3,(255,0,255),3)
-    cv2.putText(img,str(jj_cnt),(30,730),cv2.FONT_HERSHEY_DUPLEX,3,(0,0,0),5)
-    cv2.putText(img,str(jump_cnt),(30,480),cv2.FONT_HERSHEY_DUPLEX,3,(0,0,0),5)
+    cv2.putText(img, str(int(per)) + "%", (1100, 170), cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 255), 3)
+    cv2.putText(img, str(jj_cnt), (30, 730), cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 0), 5)
+    cv2.putText(img, str(jump_cnt), (30, 480), cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 0), 5)
     cv2.putText(img, str(dumb_cnt), (30, 260), cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 0), 5)
     cv2.putText(img, str(twister_cnt), (1360, 260), cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 0), 5)
     cv2.putText(img, str(pushups_cnt), (1360, 480), cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 0), 5)
     cv2.putText(img, str(sq_cnt), (1360, 730), cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 0), 5)
-    cv2.imshow("My AI Trainer",img)
+
+    cv2.imshow("My AI Trainer", img)
     cv2.waitKey(1)
